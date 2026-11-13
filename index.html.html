@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Visita360 | Tours Virtuales 360° para Inmobiliarias en Perú</title>
+    <meta name="description" content="Vende y alquila propiedades más rápido en Perú con tours virtuales 360° interactivos. Compatible con Yape, Plin y portales inmobiliarios.">
+
+    <!-- Fuentes Google: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Three.js para el visor panorámico 360° -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            950: '#020617',
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            cyan: '#0EA5E9',
+                            cyanLight: '#38BDF8',
+                            amber: '#F59E0B',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos base y prevención estricta de desbordamiento horizontal en móviles */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+            background-color: #020617;
+            color: #F8FAFC;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1, h2, h3, h4, .font-display {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Efecto Glassmorphism refinado */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(56, 189, 248, 0.14);
+        }
+
+        .glass-nav {
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Contenedor del visor 360: touch-action pan-y permite hacer scroll vertical de la página si se desliza arriba/abajo, o captura horizontal */
+        #viewer-360-container {
+            touch-action: pan-y;
+            cursor: grab;
+        }
+        #viewer-360-container:active {
+            cursor: grabbing;
+        }
+
+        /* Estilos para el comparador táctil Foto vs 360 */
+        #comparison-container {
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Animación suave para acordeón FAQ */
+        .faq-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-out;
+        }
+        .faq-item.active .faq-content {
+            grid-template-rows: 1fr;
+        }
+        .faq-inner {
+            overflow: hidden;
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Pantalla completa para el visor */
+        .viewer-fullscreen {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Fondo ambiental con brillo sutil (sin causar scroll horizontal) -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-24 -left-24 w-72 h-72 sm:w-96 sm:h-96 bg-sky-500/15 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/3 -right-24 w-72 h-72 sm:w-96 sm:h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. NAVEGACIÓN MOBILE-FIRST                 -->
+    <!-- ========================================== -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                <!-- Logo -->
+                <a href="#" class="flex items-center gap-2.5 group focus:outline-none">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:scale-105 transition-transform">
+                        <i data-lucide="compass" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-display font-extrabold text-xl tracking-tight text-white leading-none">
+                            Visita<span class="text-sky-400">360</span>
+                        </span>
+                        <span class="text-[10px] font-medium uppercase tracking-widest text-slate-400 mt-0.5">Perú Real Estate</span>
+                    </div>
+                </a>
+
+                <!-- Enlaces Desktop -->
+                <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                    <a href="#demo-visor" class="hover:text-sky-400 transition-colors py-2">Demo 360°</a>
+                    <a href="#comparador" class="hover:text-sky-400 transition-colors py-2">Foto vs 360°</a>
+                    <a href="#beneficios" class="hover:text-sky-400 transition-colors py-2">Beneficios</a>
+                    <a href="#precios" class="hover:text-sky-400 transition-colors py-2">Planes</a>
+                    <a href="#faq" class="hover:text-sky-400 transition-colors py-2">Preguntas</a>
+                </nav>
+
+                <!-- Acciones Header (CTA visible siempre + Hamburguesa en móvil) -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <a href="#cotizar" class="inline-flex items-center justify-center min-h-[44px] px-3.5 sm:px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-sky-500/25">
+                        <span>Cotizar Tour</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 ml-1.5 hidden sm:inline"></i>
+                    </a>
+
+                    <!-- Botón Menú Móvil (Área táctil >= 44x44px) -->
+                    <button id="mobile-menu-btn" type="button" aria-label="Abrir menú" aria-expanded="false" class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 hover:text-white active:bg-slate-700 transition-colors">
+                        <i data-lucide="menu" id="menu-icon-open" class="w-6 h-6"></i>
+                        <i data-lucide="x" id="menu-icon-close" class="w-6 h-6 hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Deslizante Móvil -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 px-4 pt-3 pb-6 space-y-2 shadow-2xl">
+            <a href="#demo-visor" class="mobile-link flex items-center justify-between min-h-[48px] px-4 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-900 hover:text-sky-400 transition-colors">
+                <span>Probar Visor 360° en Vivo</span>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+            </a>
+            <a href="#comparador" class="mobile-link flex items-center justify-between min-h-[48px] px-4 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-900 hover:text-sky-400 transition-colors">
+                <span>Comparador: Foto vs 360°</span>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+            </a>
+            <a href="#beneficios" class="mobile-link flex items-center justify-between min-h-[48px] px-4 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-900 hover:text-sky-400 transition-colors">
+                <span>Beneficios para Agentes</span>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+            </a>
+            <a href="#precios" class="mobile-link flex items-center justify-between min-h-[48px] px-4 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-900 hover:text-sky-400 transition-colors">
+                <span>Planes y Precios (S/)</span>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+            </a>
+            <a href="#faq" class="mobile-link flex items-center justify-between min-h-[48px] px-4 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-900 hover:text-sky-400 transition-colors">
+                <span>Preguntas Frecuentes</span>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500"></i>
+            </a>
+            <div class="pt-3 border-t border-slate-800/80">
+                <a href="#cotizar" class="mobile-link flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl bg-gradient-to-r from-sky-500 to-cyan-400 text-slate-950 font-bold text-base shadow-lg">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    <span>Solicitar Demo por WhatsApp</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 pt-20 sm:pt-24">
+
+        <!-- ========================================== -->
+        <!-- 2. HERO SECTION + VISOR 360° INTERACTIVO   -->
+        <!-- ========================================== -->
+        <section id="demo-visor" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-14 sm:py-16">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+                
+                <!-- Columna Texto Hero -->
+                <div class="lg:col-span-5 text-left space-y-5 sm:space-y-6">
+                    <!-- Badge Perú -->
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/25 text-sky-300 text-xs sm:text-sm font-medium">
+                        <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                        <span>Tecnología Inmobiliaria #1 en Perú</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.15]">
+                        Cierra ventas inmobiliarias <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-amber-300">3x más rápido</span> con Tours 360°
+                    </h1>
+
+                    <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                        Permite que tus compradores recorran departamentos, casas y oficinas en Lima y provincias desde su celular, las 24 horas del día, filtrando curiosos y atrayendo clientes listos para cerrar.
+                    </p>
+
+                    <!-- Botones CTA Responsivos -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                        <a href="#cotizar" class="inline-flex items-center justify-center gap-2 min-h-[50px] px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-[0.99] text-slate-950 font-bold text-base transition-all shadow-xl shadow-sky-500/20">
+                            <span>Crear mi Tour Virtual</span>
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#precios" class="inline-flex items-center justify-center gap-2 min-h-[50px] px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold text-base transition-all">
+                            <span>Ver Planes en Soles</span>
+                        </a>
+                    </div>
+
+                    <!-- Métricas de confianza rápidas -->
+                    <div class="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800/80">
+                        <div>
+                            <p class="text-xl sm:text-2xl font-extrabold text-white">+68%</p>
+                            <p class="text-xs text-slate-400">Más contactos calificados</p>
+                        </div>
+                        <div>
+                            <p class="text-xl sm:text-2xl font-extrabold text-sky-400">24h</p>
+                            <p class="text-xs text-slate-400">Entrega lista para compartir</p>
+                        </div>
+                        <div>
+                            <p class="text-xl sm:text-2xl font-extrabold text-amber-400">100%</p>
+                            <p class="text-xs text-slate-400">Compatible con WhatsApp</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Visor 360° Interactivo (Three.js) -->
+                <div class="lg:col-span-7">
+                    <div id="viewer-wrapper" class="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-sky-500/30 bg-slate-900 shadow-2xl shadow-sky-950/60">
+                        
+                        <!-- Barra Superior del Visor -->
+                        <div class="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-xs font-semibold text-white pointer-events-auto">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span id="current-room-label">Sala Principal • Miraflores</span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 pointer-events-auto">
+                                <!-- Botón Auto-Rotar -->
+                                <button id="btn-autorotate" type="button" title="Pausar/Reanudar giro" class="w-10 h-10 rounded-xl bg-slate-950/80 hover:bg-slate-800 backdrop-blur-md border border-white/10 flex items-center justify-center text-sky-400 transition-colors">
+                                    <i data-lucide="rotate-3d" class="w-5 h-5"></i>
+                                </button>
+                                <!-- Botón Pantalla Completa -->
+                                <button id="btn-fullscreen" type="button" title="Pantalla completa" class="w-10 h-10 rounded-xl bg-slate-950/80 hover:bg-slate-800 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transition-colors">
+                                    <i data-lucide="maximize-2" id="icon-fullscreen" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Three.js 360° -->
+                        <div id="viewer-360-container" class="relative w-full h-[340px] sm:h-[430px] lg:h-[470px] bg-slate-950">
+                            <!-- El canvas se inyecta aquí mediante JS -->
+                            
+                            <!-- Indicador táctil inicial -->
+                            <div id="touch-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-500">
+                                <div class="px-4 py-2.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-sky-400/30 flex items-center gap-2.5 text-xs sm:text-sm font-medium text-white shadow-xl animate-float">
+                                    <i data-lucide="hand" class="w-5 h-5 text-sky-400"></i>
+                                    <span>Desliza con tu dedo para mirar en 360°</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selector de Ambientes (Hotspots Rápidos en la parte inferior) -->
+                        <div class="bg-slate-950/90 backdrop-blur-md border-t border-slate-800 p-2.5 sm:p-3">
+                            <div class="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                                <span class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold hidden sm:inline pl-1">Cambiar ambiente:</span>
+                                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                                    <button type="button" data-room="sala" class="room-btn active flex-1 sm:flex-initial min-h-[42px] px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-sky-500 text-slate-950 transition-all">
+                                        <i data-lucide="sofa" class="w-4 h-4"></i>
+                                        <span>Sala</span>
+                                    </button>
+                                    <button type="button" data-room="cocina" class="room-btn flex-1 sm:flex-initial min-h-[42px] px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-slate-800/90 text-slate-200 hover:bg-slate-700 transition-all">
+                                        <i data-lucide="utensils" class="w-4 h-4"></i>
+                                        <span>Cocina</span>
+                                    </button>
+                                    <button type="button" data-room="terraza" class="room-btn flex-1 sm:flex-initial min-h-[42px] px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-slate-800/90 text-slate-200 hover:bg-slate-700 transition-all">
+                                        <i data-lucide="sun" class="w-4 h-4"></i>
+                                        <span>Terraza</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. COMPARADOR TÁCTIL: FOTO VS TOUR 360°    -->
+        <!-- ========================================== -->
+        <section id="comparador" class="py-14 sm:py-20 border-t border-slate-800/60 bg-slate-900/30">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-3">
+                    <span class="text-xs font-bold uppercase tracking-widest text-sky-400">Impacto Visual Comprobado</span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold text-white">
+                        Foto tradicional vs. Experiencia Inmersiva 360°
+                    </h2>
+                    <p class="text-slate-400 text-sm sm:text-base">
+                        Desliza la barra central para comprobar cómo un recorrido virtual aumenta la percepción de amplitud y transparencia.
+                    </p>
+                </div>
+
+                <!-- Contenedor del Comparador Interactivo -->
+                <div id="comparison-container" class="relative w-full h-[290px] sm:h-[420px] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-700/80 shadow-2xl cursor-ew-resize">
+                    
+                    <!-- LADO DERECHO (Fondo): Experiencia Visita360° -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 flex items-center justify-center">
+                        <!-- Ilustración arquitectónica 360° vibrante -->
+                        <svg class="w-full h-full object-cover opacity-90" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice">
+                            <defs>
+                                <radialGradient id="glow360" cx="50%" cy="50%" r="55%">
+                                    <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.35"/>
+                                    <stop offset="100%" stop-color="#020617" stop-opacity="0.95"/>
+                                </radialGradient>
+                            </defs>
+                            <rect width="800" height="450" fill="url(#glow360)"/>
+                            <!-- Líneas de perspectiva 360 -->
+                            <ellipse cx="400" cy="225" rx="340" ry="160" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.5"/>
+                            <ellipse cx="400" cy="225" rx="220" ry="100" fill="none" stroke="#38BDF8" stroke-width="1" opacity="0.35"/>
+                            <!-- Sala moderna iluminada -->
+                            <polygon points="140,340 280,260 520,260 660,340" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+                            <rect x="280" y="130" width="240" height="130" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+                            <!-- Ventanal panorámico vista mar Lima -->
+                            <rect x="300" y="145" width="200" height="95" rx="4" fill="#0284C7" opacity="0.6"/>
+                            <circle cx="450" cy="175" r="16" fill="#FBBF24" opacity="0.9"/>
+                            <!-- Hotspots interactivos -->
+                            <circle cx="350" cy="295" r="14" fill="#0EA5E9" opacity="0.3"/>
+                            <circle cx="350" cy="295" r="7" fill="#38BDF8"/>
+                            <circle cx="470" cy="210" r="14" fill="#F59E0B" opacity="0.35"/>
+                            <circle cx="470" cy="210" r="7" fill="#FBBF24"/>
+                        </svg>
+
+                        <!-- Etiqueta Derecha -->
+                        <div class="absolute top-4 right-4 px-3 py-1.5 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-1.5">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>Con Visita360°</span>
+                        </div>
+
+                        <!-- Tarjeta flotante derecha -->
+                        <div class="absolute bottom-4 right-4 max-w-[210px] sm:max-w-xs p-3 rounded-xl bg-slate-950/85 backdrop-blur-md border border-sky-400/30 text-left">
+                            <p class="text-xs sm:text-sm font-bold text-sky-300">Recorrido Completo 360°</p>
+                            <p class="text-[11px] sm:text-xs text-slate-300 mt-0.5">El cliente explora cada rincón, distribución y vista real antes de agendar visita.</p>
+                        </div>
+                    </div>
+
+                    <!-- LADO IZQUIERDO (Recortado): Foto Plana Tradicional -->
+                    <div id="comparison-before" class="absolute inset-0 bg-slate-800 overflow-hidden" style="clip-path: inset(0 50% 0 0);">
+                        <svg class="w-full h-full object-cover grayscale contrast-75" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice">
+                            <rect width="800" height="450" fill="#1E293B"/>
+                            <!-- Marco de foto limitada -->
+                            <rect x="220" y="100" width="360" height="250" rx="4" fill="#334155" stroke="#64748B" stroke-width="3"/>
+                            <rect x="250" y="130" width="140" height="100" fill="#475569"/>
+                            <polygon points="220,350 320,270 480,270 580,350" fill="#273549"/>
+                            <text x="400" y="235" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="16" font-weight="bold">ÁNGULO LIMITADO</text>
+                        </svg>
+
+                        <!-- Etiqueta Izquierda -->
+                        <div class="absolute top-4 left-4 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-600 text-slate-300 font-semibold text-xs sm:text-sm">
+                            <span>Foto Estática</span>
+                        </div>
+
+                        <!-- Tarjeta flotante izquierda -->
+                        <div class="absolute bottom-4 left-4 max-w-[200px] sm:max-w-xs p-3 rounded-xl bg-slate-950/85 border border-slate-700 text-left">
+                            <p class="text-xs sm:text-sm font-bold text-slate-300">Ángulo Cerrado</p>
+                            <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Genera dudas sobre el tamaño real y provoca visitas que no concretan.</p>
+                        </div>
+                    </div>
+
+                    <!-- Línea Divisoria y Manejador Táctil (48x48px) -->
+                    <div id="comparison-handle" class="absolute top-0 bottom-0 w-1 bg-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.8)] pointer-events-none" style="left: 50%;">
+                        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-sky-500 border-4 border-slate-950 text-slate-950 flex items-center justify-center shadow-xl">
+                            <i data-lucide="chevrons-left-right" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. BENEFICIOS PARA EL MERCADO INMOBILIARIO -->
+        <!-- ========================================== -->
+        <section id="beneficios" class="py-14 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-widest text-sky-400">Ventaja Competitiva</span>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-white">
+                    Diseñado para agentes e inmobiliarias modernas
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    Optimiza tu tiempo en el tráfico de la ciudad y destaca tus propiedades frente a la competencia.
+                </p>
+            </div>
+
+            <!-- Grilla Responsiva: 1 col móvil, 2 col tablet, 3 col desktop -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                
+                <!-- Card 1 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">100% Fluido en Celulares</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Tus clientes abren el enlace directo desde WhatsApp sin descargar aplicaciones pesadas. Carga ultra rápida incluso con datos móviles 4G/5G.
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="filter" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Filtra Visitas Innecesarias</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Evita traslados improductivos. Quien agenda una visita presencial después de ver el Tour 360° ya conoce la distribución y tiene alto interés real.
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="share-2" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Listo para Portales y Redes</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Integra fácilmente el enlace en Urbania, Adondevivir, Properati, Instagram, Facebook Ads o en tu propia página web inmobiliaria.
+                    </p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="badge-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Captación de Exclusivas</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Impresiona a los propietarios ofreciéndoles un servicio tecnológico superior al resto de corredores. Gana más contratos en exclusiva.
+                    </p>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Etiquetas y Puntos de Interés</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Destaca acabados premium, iluminación natural, metraje por ambiente y cercanía a parques o centros comerciales dentro del recorrido.
+                    </p>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="glass-card rounded-2xl p-6 hover:border-sky-400/40 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/15 border border-rose-400/30 flex items-center justify-center text-rose-400 mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="globe" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Vende a Peruanos en el Exterior</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Permite que inversionistas y familias peruanas residentes en EE.UU. o Europa recorran el inmueble en tiempo real junto contigo por videollamada.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 5. PLANES Y PRECIOS ADAPTADOS A PERÚ (S/)  -->
+        <!-- ========================================== -->
+        <section id="precios" class="py-14 sm:py-20 border-t border-slate-800/60 bg-slate-900/30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-3">
+                    <span class="text-xs font-bold uppercase tracking-widest text-amber-400">Inversión Transparente</span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold text-white">
+                        Planes flexibles en Soles (S/)
+                    </h2>
+                    <p class="text-slate-400 text-sm sm:text-base">
+                        Sin contratos forzosos. Elige pago por propiedad o suscripción mensual para tu cartera activa.
+                    </p>
+
+                    <!-- Selector Mensual / Anual (Ahorro 20%) -->
+                    <div class="pt-3 flex items-center justify-center">
+                        <div class="inline-flex items-center p-1.5 rounded-2xl bg-slate-950 border border-slate-800">
+                            <button type="button" id="bill-monthly" class="min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 text-slate-950 transition-all">
+                                Pago Mensual
+                            </button>
+                            <button type="button" id="bill-annual" class="min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+                                <span>Plan Anual</span>
+                                <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold">-20%</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla de Planes -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+                    
+                    <!-- Plan 1: Inicio -->
+                    <div class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between border-slate-800">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-lg font-bold text-white">Plan Inicio</span>
+                                <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-medium">Agente Independiente</span>
+                            </div>
+                            <p class="text-slate-400 text-sm mb-6">Ideal para destacar tus propiedades principales en portales inmobiliarios.</p>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-slate-400 text-lg font-bold">S/</span>
+                                    <span class="price-value text-4xl sm:text-5xl font-extrabold text-white" data-monthly="149" data-annual="119">149</span>
+                                    <span class="text-slate-400 text-sm">/ mes</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">Incluye alojamiento en la nube 24/7</p>
+                            </div>
+
+                            <ul class="space-y-3.5 text-sm text-slate-300 mb-8">
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Hasta <strong>3 Tours Virtuales 360°</strong> activos</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Enlace directo para compartir por WhatsApp</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Etiquetas informativas por ambiente</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Soporte técnico por WhatsApp</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <a href="#cotizar" data-plan="Plan Inicio (S/ 149)" class="select-plan-btn w-full min-h-[48px] rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm flex items-center justify-center transition-colors">
+                            Elegir Plan Inicio
+                        </a>
+                    </div>
+
+                    <!-- Plan 2: Profesional (DESTACADO) -->
+                    <div class="relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between bg-gradient-to-b from-slate-900 via-slate-900 to-sky-950/60 border-2 border-amber-400/80 shadow-2xl shadow-amber-500/10">
+                        <!-- Badge Más Popular -->
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-lg whitespace-nowrap">
+                            ⭐ Más Elegido en Perú
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-4 mt-1">
+                                <span class="text-xl font-extrabold text-white">Plan Profesional</span>
+                                <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold">Top Ventas</span>
+                            </div>
+                            <p class="text-slate-300 text-sm mb-6">Para corredores activos que buscan cerrar más exclusivas y proyectar marca personal.</p>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-amber-400 text-lg font-bold">S/</span>
+                                    <span class="price-value text-4xl sm:text-5xl font-extrabold text-white" data-monthly="299" data-annual="239">299</span>
+                                    <span class="text-slate-400 text-sm">/ mes</span>
+                                </div>
+                                <p class="text-xs text-amber-300/80 mt-1">Ahorra hasta S/ 720 al año</p>
+                            </div>
+
+                            <ul class="space-y-3.5 text-sm text-slate-200 mb-8">
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                    <span>Hasta <strong>10 Tours Virtuales 360°</strong> activos</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                    <span><strong>Tu Logo y Foto</strong> de agente dentro del visor</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                    <span>Botón directo a tu WhatsApp dentro del tour</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                    <span>Plano interactivo y vista de mapa Google Maps</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                    <span>Estadísticas de visitas por propiedad</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <a href="#cotizar" data-plan="Plan Profesional (S/ 299)" class="select-plan-btn w-full min-h-[50px] rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-sm flex items-center justify-center shadow-lg shadow-amber-500/20 transition-all">
+                            Comenzar con Profesional
+                        </a>
+                    </div>
+
+                    <!-- Plan 3: Agencia / Constructora -->
+                    <div class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between border-slate-800 md:col-span-2 lg:col-span-1">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-lg font-bold text-white">Plan Agencia</span>
+                                <span class="px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 text-xs font-medium">Equipos y Proyectos</span>
+                            </div>
+                            <p class="text-slate-400 text-sm mb-6">Solución corporativa para inmobiliarias, franquicias y proyectos en estreno.</p>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-slate-400 text-lg font-bold">S/</span>
+                                    <span class="price-value text-4xl sm:text-5xl font-extrabold text-white" data-monthly="590" data-annual="470">590</span>
+                                    <span class="text-slate-400 text-sm">/ mes</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">Multiusuario para todo tu equipo</p>
+                            </div>
+
+                            <ul class="space-y-3.5 text-sm text-slate-300 mb-8">
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Hasta <strong>30 Tours Virtuales 360°</strong> activos</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Marca blanca con dominio personalizado</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Panel de control para hasta 10 asesores</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-sky-400 shrink-0"></i>
+                                    <span>Capacitación en toma de fotos 360° incluida</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <a href="#cotizar" data-plan="Plan Agencia (S/ 590)" class="select-plan-btn w-full min-h-[48px] rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm flex items-center justify-center transition-colors">
+                            Solicitar Plan Agencia
+                        </a>
+                    </div>
+
+                </div>
+
+                <!-- Métodos de Pago Locales Perú -->
+                <div class="mt-10 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
+                    <span class="text-xs font-medium text-slate-400">Aceptamos todos los medios de pago en Perú:</span>
+                    <div class="flex flex-wrap items-center justify-center gap-2.5">
+                        <span class="px-3 py-1.5 rounded-lg bg-[#742284]/25 border border-[#742284]/50 text-purple-200 font-bold text-xs">Yape</span>
+                        <span class="px-3 py-1.5 rounded-lg bg-[#00D1B2]/20 border border-[#00D1B2]/40 text-teal-200 font-bold text-xs">Plin</span>
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs">Visa / Mastercard</span>
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs">Transferencia BCP / BBVA / Interbank</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 6. PREGUNTAS FRECUENTES (ACORDEÓN)         -->
+        <!-- ========================================== -->
+        <section id="faq" class="py-14 sm:py-20 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-10 space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-sky-400">Resolvemos tus dudas</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Preguntas Frecuentes</h2>
+            </div>
+
+            <div class="space-y-3" id="faq-accordion">
+                <!-- FAQ 1 -->
+                <div class="faq-item glass-card rounded-2xl overflow-hidden">
+                    <button type="button" class="faq-trigger w-full min-h-[56px] px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white hover:text-sky-400 transition-colors">
+                        <span>¿Necesito comprar una cámara especial para usar Visita360?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-sky-400 shrink-0 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-inner px-5 pb-4 text-slate-300 text-sm leading-relaxed border-t border-slate-800/60 pt-3">
+                            Tienes dos opciones: si ya cuentas con una cámara 360° (como Insta360 o Ricoh Theta), subes tus fotos y creas el tour en minutos. Si no tienes cámara, nuestro equipo fotográfico en Lima puede acudir a capturar la propiedad o asesorarte para hacerlo desde tu celular.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="faq-item glass-card rounded-2xl overflow-hidden">
+                    <button type="button" class="faq-trigger w-full min-h-[56px] px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white hover:text-sky-400 transition-colors">
+                        <span>¿Cómo comparto el tour virtual con mis clientes?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-sky-400 shrink-0 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-inner px-5 pb-4 text-slate-300 text-sm leading-relaxed border-t border-slate-800/60 pt-3">
+                            Al publicar tu propiedad obtienes un enlace único (ej. <em>visita360.pe/departamento-miraflores</em>) listo para pegar en WhatsApp, Instagram, Facebook o en la sección de recorrido virtual de Urbania y Adondevivir.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="faq-item glass-card rounded-2xl overflow-hidden">
+                    <button type="button" class="faq-trigger w-full min-h-[56px] px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white hover:text-sky-400 transition-colors">
+                        <span>¿Qué pasa cuando vendo o alquilo una propiedad?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-sky-400 shrink-0 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-inner px-5 pb-4 text-slate-300 text-sm leading-relaxed border-t border-slate-800/60 pt-3">
+                            Tus espacios de tour son rotativos. Apenas cierras la venta o alquiler de un inmueble, puedes archivarlo y liberar ese cupo inmediatamente para tu siguiente propiedad captada sin costo adicional.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="faq-item glass-card rounded-2xl overflow-hidden">
+                    <button type="button" class="faq-trigger w-full min-h-[56px] px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white hover:text-sky-400 transition-colors">
+                        <span>¿Brindan servicio de toma fotográfica 360° en Lima y provincias?</span>
+                        <i data-lucide="chevron-down" class="faq-icon w-5 h-5 text-sky-400 shrink-0 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-inner px-5 pb-4 text-slate-300 text-sm leading-relaxed border-t border-slate-800/60 pt-3">
+                            Sí, contamos con fotógrafos certificados en Lima Metropolitana (Miraflores, San Isidro, Surco, La Molina, Barranco, San Borja, Magdalena) y red de aliados en Arequipa, Trujillo, Piura y Cusco.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 7. FORMULARIO RÁPIDO A WHATSAPP            -->
+        <!-- ========================================== -->
+        <section id="cotizar" class="py-14 sm:py-20 border-t border-slate-800/60">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="glass-card rounded-3xl p-6 sm:p-10 border-sky-500/30 shadow-2xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        
+                        <!-- Info lateral -->
+                        <div class="lg:col-span-5 space-y-4">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-bold">
+                                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                                Respuesta en menos de 10 min
+                            </span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+                                Cotiza tu Tour Virtual hoy mismo
+                            </h2>
+                            <p class="text-slate-300 text-sm leading-relaxed">
+                                Completa tus datos y te enviaremos una demostración personalizada directamente a tu WhatsApp.
+                            </p>
+                            <div class="space-y-2.5 pt-2 text-xs sm:text-sm text-slate-400">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="check" class="w-4 h-4 text-sky-400"></i>
+                                    <span>Sin compromiso de compra</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="check" class="w-4 h-4 text-sky-400"></i>
+                                    <span>Emitimos Factura o Boleta electrónica SUNAT</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario -->
+                        <form id="whatsapp-form" class="lg:col-span-7 space-y-4">
+                            <div>
+                                <label for="lead-name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Tu Nombre o Inmobiliaria</label>
+                                <input type="text" id="lead-name" required placeholder="Ej. Carlos Mendoza - Inmobiliaria Sur" class="w-full min-h-[48px] px-4 rounded-xl bg-slate-950/90 border border-slate-700 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 text-white placeholder-slate-500 text-sm outline-none transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="lead-type" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Tipo de Inmueble</label>
+                                    <select id="lead-type" class="w-full min-h-[48px] px-4 rounded-xl bg-slate-950/90 border border-slate-700 focus:border-sky-400 text-white text-sm outline-none transition-all">
+                                        <option value="Departamento">Departamento</option>
+                                        <option value="Casa / Residencia">Casa / Residencia</option>
+                                        <option value="Oficina / Local Comercial">Oficina / Local Comercial</option>
+                                        <option value="Proyecto en Estreno">Proyecto en Estreno</option>
+                                        <option value="Terreno / Casa de Playa">Terreno / Casa de Playa</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="lead-plan" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Plan de Interés</label>
+                                    <select id="lead-plan" class="w-full min-h-[48px] px-4 rounded-xl bg-slate-950/90 border border-slate-700 focus:border-sky-400 text-white text-sm outline-none transition-all">
+                                        <option value="Plan Profesional (S/ 299)">Plan Profesional (S/ 299/mes)</option>
+                                        <option value="Plan Inicio (S/ 149)">Plan Inicio (S/ 149/mes)</option>
+                                        <option value="Plan Agencia (S/ 590)">Plan Agencia (S/ 590/mes)</option>
+                                        <option value="Servicio Puntual por Propiedad">Tour Único por Propiedad</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="lead-district" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Distrito o Ciudad (Opcional)</label>
+                                <input type="text" id="lead-district" placeholder="Ej. Miraflores, Surco, San Isidro, Arequipa..." class="w-full min-h-[48px] px-4 rounded-xl bg-slate-950/90 border border-slate-700 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 text-white placeholder-slate-500 text-sm outline-none transition-all">
+                            </div>
+
+                            <button type="submit" class="w-full min-h-[52px] px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-extrabold text-base flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/20 transition-all">
+                                <i data-lucide="message-circle" class="w-5 h-5"></i>
+                                <span>Enviar Cotización por WhatsApp</span>
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- 8. FOOTER                                  -->
+    <!-- ========================================== -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-10 pb-24 sm:pb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-slate-950">
+                    <i data-lucide="compass" class="w-5 h-5"></i>
+                </div>
+                <span class="font-display font-bold text-lg text-white">Visita<span class="text-sky-400">360</span> Perú</span>
+            </div>
+
+            <p class="text-xs text-slate-500 text-center sm:text-right">
+                © 2026 Visita360 Perú. Todos los derechos reservados. Lima, Perú.
+            </p>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- 9. BOTÓN FLOTANTE DE WHATSAPP              -->
+    <!-- ========================================== -->
+    <a href="https://wa.me/51999999999?text=Hola%20Visita360%2C%20quisiera%20informaci%C3%B3n%20sobre%20los%20tours%20virtuales%20360%C2%B0%20para%20propiedades." 
+       target="_blank" 
+       rel="noopener noreferrer"
+       aria-label="Contactar por WhatsApp"
+       class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 inline-flex items-center gap-2.5 min-h-[52px] px-4 sm:px-5 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-extrabold text-sm shadow-2xl shadow-emerald-950/80 border-2 border-emerald-300/40 transition-all">
+        <i data-lucide="message-circle" class="w-6 h-6 fill-slate-950/10"></i>
+        <span class="hidden sm:inline">Asesoría WhatsApp</span>
+    </a>
+
+    <!-- ========================================== -->
+    <!-- LÓGICA INTERACTIVA (THREE.JS, TOUCH, UI)   -->
+    <!-- ========================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Inicializar iconos Lucide
+            lucide.createIcons();
+
+            // 2. Menú Hamburguesa Móvil
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('menu-icon-open');
+            const iconClose = document.getElementById('menu-icon-close');
+            const mobileLinks = document.querySelectorAll('.mobile-link');
+
+            function toggleMobileMenu() {
+                const isHidden = mobileMenu.classList.contains('hidden');
+                mobileMenu.classList.toggle('hidden');
+                iconOpen.classList.toggle('hidden', !isHidden);
+                iconClose.classList.toggle('hidden', isHidden);
+                menuBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            }
+
+            menuBtn.addEventListener('click', toggleMobileMenu);
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) toggleMobileMenu();
+                });
+            });
+
+            // 3. Visor Panorámico 360° Interactivo con Three.js (Sin imágenes externas, 100% procedural y rápido)
+            const container = document.getElementById('viewer-360-container');
+            const touchHint = document.getElementById('touch-hint');
+            const roomLabel = document.getElementById('current-room-label');
+            const roomButtons = document.querySelectorAll('.room-btn');
+            const btnAutoRotate = document.getElementById('btn-autorotate');
+            const btnFullscreen = document.getElementById('btn-fullscreen');
+            const viewerWrapper = document.getElementById('viewer-wrapper');
+
+            // Configuración de ambientes arquitectónicos en Canvas 2D -> Textura Equirectangular 360°
+            const roomsData = {
+                sala: {
+                    title: 'Sala Principal • Miraflores',
+                    skyTop: '#0284C7',
+                    skyBottom: '#BAE6FD',
+                    wallColor: '#F1F5F9',
+                    wallAccent: '#CBD5E1',
+                    floorColor: '#78350F',
+                    furnitureColor: '#1E293B',
+                    accentColor: '#0EA5E9',
+                    label: 'SALA PANORÁMICA CON VISTA AL MAR'
+                },
+                cocina: {
+                    title: 'Cocina Americana • San Isidro',
+                    skyTop: '#0369A1',
+                    skyBottom: '#E0F2FE',
+                    wallColor: '#FFFFFF',
+                    wallAccent: '#E2E8F0',
+                    floorColor: '#475569',
+                    furnitureColor: '#0F172A',
+                    accentColor: '#F59E0B',
+                    label: 'COCINA EQUIPADA CON ISLA DE CUARZO'
+                },
+                terraza: {
+                    title: 'Terraza Lounge • Barranco',
+                    skyTop: '#EA580C',
+                    skyBottom: '#FDE68A',
+                    wallColor: '#334155',
+                    wallAccent: '#475569',
+                    floorColor: '#92400E',
+                    furnitureColor: '#F8FAFC',
+                    accentColor: '#38BDF8',
+                    label: 'TERRAZA PRIVADA • ATARDECER EN LIMA'
+                }
+            };
+
+            function createPanoramaTexture(roomKey) {
+                const data = roomsData[roomKey];
+                const canvas = document.createElement('canvas');
+                canvas.width = 2048;
+                canvas.height = 1024;
+                const ctx = canvas.getContext('2d');
+
+                // Cielo / Techo iluminado
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, 520);
+                skyGrad.addColorStop(0, '#0F172A');
+                skyGrad.addColorStop(0.35, data.skyTop);
+                skyGrad.addColorStop(1, data.skyBottom);
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, 2048, 520);
+
+                // Piso arquitectónico con textura de listones/porcelanato
+                const floorGrad = ctx.createLinearGradient(0, 520, 0, 1024);
+                floorGrad.addColorStop(0, data.floorColor);
+                floorGrad.addColorStop(1, '#090D16');
+                ctx.fillStyle = floorGrad;
+                ctx.fillRect(0, 520, 2048, 504);
+
+                // Líneas de perspectiva en el piso
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 2;
+                for (let x = 0; x <= 2048; x += 64) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 520);
+                    ctx.lineTo(x + (x - 1024) * 0.4, 1024);
+                    ctx.stroke();
+                }
+
+                // Paredes y ventanales panorámicos alrededor de los 360 grados
+                const panels = 8;
+                const panelWidth = 2048 / panels;
+                for (let i = 0; i < panels; i++) {
+                    const px = i * panelWidth;
+                    
+                    // Columnas estructurales
+                    ctx.fillStyle = data.wallColor;
+                    ctx.fillRect(px, 160, 28, 370);
+                    ctx.fillRect(px + panelWidth - 28, 160, 28, 370);
+
+                    // Dintel superior y zócalo inferior
+                    ctx.fillStyle = data.wallAccent;
+                    ctx.fillRect(px, 140, panelWidth, 35);
+                    ctx.fillRect(px, 505, panelWidth, 25);
+
+                    // Ventanal panorámico en paneles pares, muro decorativo en impares
+                    if (i % 2 === 0) {
+                        // Marco de vidrio
+                        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(px + 30, 178, panelWidth - 60, 325);
+
+                        // Horizonte marino / ciudad
+                        ctx.fillStyle = 'rgba(2, 132, 199, 0.35)';
+                        ctx.fillRect(px + 32, 390, panelWidth - 64, 110);
+                    } else {
+                        // Pared interior moderna con cuadro / mobiliario
+                        ctx.fillStyle = data.wallColor;
+                        ctx.fillRect(px + 28, 175, panelWidth - 56, 330);
+
+                        // Mobiliario minimalista
+                        ctx.fillStyle = data.furnitureColor;
+                        ctx.fillRect(px + 55, 425, panelWidth - 110, 80);
+
+                        // Cuadro decorativo o TV
+                        ctx.fillStyle = '#0F172A';
+                        ctx.fillRect(px + 75, 250, panelWidth - 150, 110);
+                        ctx.strokeStyle = data.accentColor;
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(px + 75, 250, panelWidth - 150, 110);
+                    }
+
+                    // Hotspot indicador 360 dentro de la escena
+                    const hx = px + panelWidth / 2;
+                    const hy = 460;
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, 18, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(14, 165, 233, 0.35)';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = '#38BDF8';
+                    ctx.fill();
+                }
+
+                // Cartel informativo flotante en la vista frontal
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(724, 210, 600, 64);
+                ctx.strokeStyle = data.accentColor;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(724, 210, 600, 64);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(data.label, 1024, 250);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+                return texture;
+            }
+
+            // Inicializar escena Three.js
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.target = new THREE.Vector3(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Esfera invertida para proyección 360°
+            const geometry = new THREE.SphereGeometry(500, 60, 40);
+            geometry.scale(-1, 1, 1);
+
+            const material = new THREE.MeshBasicMaterial({
+                map: createPanoramaTexture('sala')
+            });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            // Variables de control de cámara táctil y mouse
+            let isUserInteracting = false;
+            let onPointerDownMouseX = 0, onPointerDownMouseY = 0;
+            let lon = 180, onPointerDownLon = 0;
+            let lat = 0, onPointerDownLat = 0;
+            let autoRotate = true;
+
+            function hideTouchHint() {
+                if (touchHint && touchHint.style.opacity !== '0') {
+                    touchHint.style.opacity = '0';
+                }
+            }
+
+            container.addEventListener('pointerdown', (e) => {
+                isUserInteracting = true;
+                hideTouchHint();
+                onPointerDownMouseX = e.clientX;
+                onPointerDownMouseY = e.clientY;
+                onPointerDownLon = lon;
+                onPointerDownLat = lat;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!isUserInteracting) return;
+                lon = (onPointerDownMouseX - e.clientX) * 0.22 + onPointerDownLon;
+                lat = (e.clientY - onPointerDownMouseY) * 0.22 + onPointerDownLat;
+            });
+
+            window.addEventListener('pointerup', () => {
+                isUserInteracting = false;
+            });
+
+            // Botones de cambio de habitación
+            roomButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const roomKey = btn.getAttribute('data-room');
+                    material.map = createPanoramaTexture(roomKey);
+                    material.needsUpdate = true;
+                    roomLabel.textContent = roomsData[roomKey].title;
+
+                    roomButtons.forEach(b => {
+                        b.classList.remove('bg-sky-500', 'text-slate-950');
+                        b.classList.add('bg-slate-800/90', 'text-slate-200');
+                    });
+                    btn.classList.remove('bg-slate-800/90', 'text-slate-200');
+                    btn.classList.add('bg-sky-500', 'text-slate-950');
+                    hideTouchHint();
+                });
+            });
+
+            // Toggle auto-rotación
+            btnAutoRotate.addEventListener('click', () => {
+                autoRotate = !autoRotate;
+                btnAutoRotate.classList.toggle('text-sky-400', autoRotate);
+                btnAutoRotate.classList.toggle('text-slate-500', !autoRotate);
+            });
+
+            // Pantalla completa
+            btnFullscreen.addEventListener('click', () => {
+                viewerWrapper.classList.toggle('viewer-fullscreen');
+                const isFull = viewerWrapper.classList.contains('viewer-fullscreen');
+                container.style.height = isFull ? 'calc(100vh - 64px)' : '';
+                onWindowResize();
+            });
+
+            function onWindowResize() {
+                if (!container) return;
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+            window.addEventListener('resize', onWindowResize);
+
+            // Bucle de renderizado 360°
+            function animate() {
+                requestAnimationFrame(animate);
+                if (!isUserInteracting && autoRotate) {
+                    lon += 0.08;
+                }
+                lat = Math.max(-65, Math.min(65, lat));
+                const phi = THREE.MathUtils.degToRad(90 - lat);
+                const theta = THREE.MathUtils.degToRad(lon);
+
+                camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                camera.target.y = 500 * Math.cos(phi);
+                camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+                camera.lookAt(camera.target);
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // 4. Comparador Interactivo Táctil "Foto vs Tour 360°"
+            const compContainer = document.getElementById('comparison-container');
+            const compBefore = document.getElementById('comparison-before');
+            const compHandle = document.getElementById('comparison-handle');
+            let isSliding = false;
+
+            function updateComparisonPosition(clientX) {
+                const rect = compContainer.getBoundingClientRect();
+                let pos = ((clientX - rect.left) / rect.width) * 100;
+                pos = Math.max(5, Math.min(95, pos));
+                compBefore.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
+                compHandle.style.left = `${pos}%`;
+            }
+
+            compContainer.addEventListener('pointerdown', (e) => {
+                isSliding = true;
+                updateComparisonPosition(e.clientX);
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!isSliding) return;
+                updateComparisonPosition(e.clientX);
+            });
+
+            window.addEventListener('pointerup', () => {
+                isSliding = false;
+            });
+
+            // 5. Selector de Precios Mensual / Anual
+            const btnMonthly = document.getElementById('bill-monthly');
+            const btnAnnual = document.getElementById('bill-annual');
+            const priceValues = document.querySelectorAll('.price-value');
+
+            btnMonthly.addEventListener('click', () => {
+                btnMonthly.classList.add('bg-sky-500', 'text-slate-950');
+                btnMonthly.classList.remove('text-slate-300');
+                btnAnnual.classList.remove('bg-sky-500', 'text-slate-950');
+                btnAnnual.classList.add('text-slate-300');
+
+                priceValues.forEach(el => {
+                    el.textContent = el.getAttribute('data-monthly');
+                });
+            });
+
+            btnAnnual.addEventListener('click', () => {
+                btnAnnual.classList.add('bg-sky-500', 'text-slate-950');
+                btnAnnual.classList.remove('text-slate-300');
+                btnMonthly.classList.remove('bg-sky-500', 'text-slate-950');
+                btnMonthly.classList.add('text-slate-300');
+
+                priceValues.forEach(el => {
+                    el.textContent = el.getAttribute('data-annual');
+                });
+            });
+
+            // Preseleccionar plan en el formulario al hacer clic en tarjeta de precios
+            document.querySelectorAll('.select-plan-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const planName = btn.getAttribute('data-plan');
+                    const planSelect = document.getElementById('lead-plan');
+                    if (planSelect && planName) {
+                        planSelect.value = planName;
+                    }
+                });
+            });
+
+            // 6. Acordeón Preguntas Frecuentes (FAQ)
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const trigger = item.querySelector('.faq-trigger');
+                trigger.addEventListener('click', () => {
+                    const isActive = item.classList.contains('active');
+                    faqItems.forEach(i => i.classList.remove('active'));
+                    if (!isActive) item.classList.add('active');
+                });
+            });
+
+            // 7. Generador de Mensaje Automático hacia WhatsApp
+            const whatsappForm = document.getElementById('whatsapp-form');
+            whatsappForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('lead-name').value.trim();
+                const propType = document.getElementById('lead-type').value;
+                const plan = document.getElementById('lead-plan').value;
+                const district = document.getElementById('lead-district').value.trim();
+
+                const phone = '51999999999'; // Número de WhatsApp comercial Perú
+                let message = `Hola *Visita360 Perú* 👋, soy *${name}*.\n`;
+                message += `Me interesa cotizar un Tour Virtual 360°:\n`;
+                message += `• *Inmueble:* ${propType}\n`;
+                message += `• *Plan:* ${plan}\n`;
+                if (district) {
+                    message += `• *Ubicación:* ${district}\n`;
+                }
+                message += `\n¿Podrían enviarme una demo y disponibilidad?`;
+
+                const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            });
+        });
+    </script>
+</body>
+</html>
