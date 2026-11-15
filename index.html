@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visita360 · Tours 360 para vender propiedades</title>
+<meta name="description" content="Recorridos 360 de departamentos y casas, publicados en una página propia lista para compartir por WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060b14;--ink:#e9f2f8;--mut:#9db2c2;--cy:hsl(var(--h) 100% 64%);--am:#ffb347;--gl:rgba(10,22,38,.62);--ln:rgba(77,225,255,.28);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{font-family:Sora,"DM Sans",system-ui,sans-serif;margin:0;letter-spacing:-.02em}
+a,button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cy);outline-offset:3px}
+nav{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:20px;padding:14px clamp(16px,4vw,40px)}
+.brand{display:flex;align-items:center;gap:10px;font:700 18px Sora,sans-serif;text-decoration:none}
+.brand svg{width:28px;height:28px;fill:none;stroke:var(--cy);stroke-width:1.8}
+nav .links{margin-left:auto;display:flex;gap:26px}
+nav .links a{text-decoration:none;color:var(--mut);transition:color .2s}
+nav .links a:hover{color:#fff}
+.wa{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2fe27b,#17a85a);color:#04220f;font-weight:700;text-decoration:none;padding:9px 16px;border-radius:99px;box-shadow:0 6px 20px rgba(23,168,90,.4)}
+.wa svg{width:18px;height:18px;fill:currentColor}
+.hero{position:relative;height:100svh;min-height:600px;overflow:hidden;background:#0c1319}
+#gl{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;cursor:grab}
+#gl:active{cursor:grabbing}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(6,11,20,.7) 0,transparent 24%,transparent 38%,rgba(6,11,20,.92) 100%),linear-gradient(90deg,rgba(6,11,20,.7),transparent 62%);transition:opacity .5s}
+.explore .hero::after{opacity:.25}
+#hs{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:3}
+.hs{position:absolute;left:0;top:0;display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;cursor:pointer;pointer-events:auto}
+.hs i{position:relative;width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:radial-gradient(circle at 30% 25%,#9af5ff,#1db7ff 55%,#2a5bff);box-shadow:0 0 22px rgba(60,200,255,.9)}
+.hs i::before{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid rgba(94,231,255,.85);animation:rip 2.4s ease-out infinite}
+.hs span{background:rgba(8,16,26,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--ln);padding:4px 12px;border-radius:99px;font-size:13px;font-weight:500}
+@keyframes rip{from{transform:scale(1);opacity:.9}to{transform:scale(2.6);opacity:0}}
+.copy{position:absolute;z-index:4;left:clamp(16px,4vw,40px);bottom:clamp(76px,12vh,120px);max-width:min(620px,calc(100% - 32px));transition:opacity .45s,transform .45s}
+.explore .copy{opacity:0;transform:translateY(16px);pointer-events:none}
+h1{font-size:clamp(32px,5.4vw,64px);line-height:1.04;font-weight:700;text-wrap:balance}
+.copy p{color:#c5d6e2;font-size:clamp(15px,1.6vw,18px);max-width:46ch;margin:16px 0 24px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{border:1px solid var(--ln);background:var(--gl);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:12px 20px;border-radius:99px;cursor:pointer;text-decoration:none;font-weight:500;transition:border-color .2s,background .2s}
+.btn:hover{border-color:var(--cy)}
+.btn.pri{background:var(--cy);color:#03202a;border-color:var(--cy);font-weight:700}
+.card{position:absolute;z-index:4;right:clamp(16px,4vw,40px);top:84px;width:min(290px,calc(100% - 32px));padding:14px 16px;border-radius:18px;background:linear-gradient(160deg,rgba(14,28,44,.76),rgba(8,14,24,.62));-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border:1px solid var(--ln);box-shadow:0 10px 40px rgba(0,0,0,.45),0 0 34px rgba(30,144,255,.3)}
+.card small{color:var(--mut)}
+.card h2{font-size:16px;margin:2px 0 8px}
+.card .pr{font:700 26px Sora,sans-serif;background:linear-gradient(90deg,#fff,#7ff0ff 80%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.card ul{list-style:none;margin:10px 0 0;padding:0;display:flex;gap:6px;flex-wrap:wrap}
+.card li{padding:4px 10px;border-radius:99px;background:rgba(94,231,255,.1);border:1px solid rgba(94,231,255,.22);font-size:12.5px}
+.now{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--ln);font-size:13px;color:var(--mut)}
+.now b{color:var(--ink);font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--am);box-shadow:0 0 10px var(--am)}
+.chips{position:absolute;z-index:4;left:0;right:0;bottom:0;display:flex;gap:8px;overflow-x:auto;padding:12px clamp(16px,4vw,40px) calc(14px + env(safe-area-inset-bottom,0px))}
+.chips button{flex:none;border:1px solid rgba(255,255,255,.4);background:rgba(8,16,26,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:99px;padding:7px 16px;cursor:pointer}
+.chips button[aria-pressed=true]{background:#fff;color:#0a1622;border-color:#fff}
+.chips .out{margin-left:auto;display:none;border-color:var(--cy);color:var(--cy)}
+.explore .chips .out{display:block}
+.guide{padding:clamp(56px,9vw,110px) clamp(16px,4vw,40px);max-width:1100px;margin:0 auto}
+.guide h2{font-size:clamp(26px,3.6vw,40px);max-width:20ch;margin-bottom:40px;text-wrap:balance}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--ln)}
+.steps div{padding:22px 24px 0 0}
+.steps h3{font-size:19px;margin-bottom:8px;color:var(--cy)}
+.steps p{margin:0;color:var(--mut);max-width:34ch}
+.end{padding:0 clamp(16px,4vw,40px) 80px;text-align:center}
+.end h2{font-size:clamp(24px,3.2vw,36px);margin-bottom:20px}
+@media (max-width:700px){nav .links{display:none}nav .wa{margin-left:auto}.steps{grid-template-columns:1fr}.card{top:72px;width:min(240px,calc(100% - 32px));padding:10px 12px}.card .pr{font-size:21px}.card ul,.now{display:none}.copy{bottom:84px}.chips .out{margin-left:8px}}
+@media (prefers-reduced-motion:reduce){.hs i::before{animation:none}html{scroll-behavior:auto}.copy,.hero::after{transition:none}}
+@property --h{syntax:'<number>';inherits:true;initial-value:190}
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes hue{to{--h:550}}
+@keyframes spin{to{--a:360deg}}
+@keyframes shine{to{background-position:200% 0}}
+@keyframes up{from{opacity:0;transform:translateY(28px);filter:blur(8px)}}
+:root{animation:hue 20s linear infinite}
+.hl{display:inline-block;background:linear-gradient(100deg,hsl(var(--h) 100% 66%),hsl(calc(var(--h) + 60) 100% 70%),hsl(calc(var(--h) + 120) 100% 66%),hsl(var(--h) 100% 66%));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite;filter:drop-shadow(0 0 22px hsl(var(--h) 100% 60%/.55))}
+.copy h1{animation:up .9s cubic-bezier(.2,.8,.2,1) .1s both}.copy p{animation:up .9s cubic-bezier(.2,.8,.2,1) .3s both}.copy .cta{animation:up .9s cubic-bezier(.2,.8,.2,1) .5s both}
+.hero::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(40% 50% at 18% 85%,hsl(var(--h) 100% 55%/.3),transparent),radial-gradient(35% 45% at 88% 25%,hsl(calc(var(--h) + 120) 100% 60%/.24),transparent)}
+.hs i{background:radial-gradient(circle at 30% 25%,#fff,var(--cy) 55%,hsl(calc(var(--h) + 60) 90% 55%));box-shadow:0 0 22px var(--cy)}.hs i::before{border-color:var(--cy)}
+.card{box-shadow:0 10px 40px rgba(0,0,0,.45),0 0 34px hsl(var(--h) 100% 60%/.3)}.card .pr{background:linear-gradient(90deg,#fff,var(--cy) 80%);-webkit-background-clip:text;background-clip:text}
+.btn.pri{box-shadow:0 0 28px hsl(var(--h) 100% 60%/.5)}
+.plans{position:relative;overflow:hidden;padding:clamp(56px,9vw,110px) clamp(16px,4vw,40px)}
+.plans::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(45% 40% at 15% 20%,hsl(var(--h) 100% 55%/.16),transparent),radial-gradient(40% 45% at 90% 80%,hsl(calc(var(--h) + 120) 100% 60%/.14),transparent)}
+.plans .in{position:relative;max-width:1100px;margin:0 auto}
+.plans h2{font-size:clamp(26px,3.6vw,40px);margin-bottom:10px}.plans .sub{color:var(--mut);max-width:56ch;margin:0 0 40px}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+.pl{position:relative;display:flex;flex-direction:column;padding:26px 24px;border-radius:22px;background:linear-gradient(160deg,rgba(16,30,48,.82),rgba(8,14,24,.72));border:1px solid var(--ln);transition:transform .3s,border-color .3s}
+.pl:hover{transform:translateY(-6px);border-color:var(--cy)}
+.pl.top{background:linear-gradient(#0b1626,#0b1626) padding-box,conic-gradient(from var(--a),var(--cy),hsl(calc(var(--h) + 120) 100% 65%),var(--am),var(--cy)) border-box;border:2px solid transparent;animation:spin 6s linear infinite;box-shadow:0 0 50px hsl(var(--h) 100% 55%/.28);transform:translateY(-10px)}
+.pl.top:hover{transform:translateY(-16px)}
+.bd{position:absolute;top:-13px;left:24px;background:linear-gradient(90deg,var(--cy),hsl(calc(var(--h) + 60) 100% 66%));color:#03202a;font:700 12px "DM Sans",sans-serif;padding:4px 12px;border-radius:99px}
+.pl h3{font-size:20px}.pl .pr{font:700 40px Sora,sans-serif;margin:10px 0 16px}.pl .pr small{font:400 14px "DM Sans",sans-serif;color:var(--mut)}
+.pl ul{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:10px;flex:1}.pl li{display:flex;gap:10px;color:#cfe0eb}.pl li::before{content:"✓";color:var(--cy);font-weight:700}
+.pl .btn{text-align:center}
+.pay{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:36px;color:var(--mut)}.pay b{padding:5px 14px;border-radius:99px;border:1px solid var(--ln);font-weight:700}.pay .v{font-style:italic;color:#9fb4ff}.pay .y{color:#b57bff}.pay .p{color:#3fd0ff}
+.rv{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}.rv.on{opacity:1;transform:none}
+@media (max-width:700px){.pg{grid-template-columns:1fr}.pl.top,.pl.top:hover{transform:none}}
+@media (prefers-reduced-motion:reduce){:root,.hl,.pl.top,.copy h1,.copy p,.copy .cta{animation:none}.rv{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<nav>
+<a class="brand" href="#top" aria-label="Visita360, inicio"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12"/><ellipse cx="16" cy="16" rx="5" ry="12"/><path d="M4 16h24"/></svg>Visita360</a>
+<div class="links"><a href="#como">Cómo funciona</a><a href="#planes">Planes</a><a href="#top" id="lnkEx">Probar el tour</a></div>
+<a class="wa" href="https://wa.me/51999999999?text=%C2%A1Hola!%20%F0%9F%91%8B%20Quiero%20un%20tour%20360%20para%20mi%20propiedad%20%F0%9F%8F%A0" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.07c.15.2 2.1 3.2 5.08 4.49.7.3 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35M12 21.8a9.9 9.9 0 01-5-1.38l-.36-.21-3.74.98 1-3.65-.24-.37A9.86 9.86 0 012.1 12C2.1 6.55 6.55 2.1 12 2.1c2.64 0 5.12 1.03 6.99 2.9A9.83 9.83 0 0121.9 12c0 5.45-4.44 9.8-9.9 9.8M20.5 3.5A11.8 11.8 0 0012 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.9 11.9 0 005.68 1.45c6.55 0 11.9-5.34 11.9-11.9 0-3.18-1.24-6.17-3.4-8.4"/></svg>WhatsApp</a>
+</nav>
+
+<header class="hero" id="top">
+<canvas id="gl" aria-label="Panorama 360 de ejemplo. Arrastra para mirar alrededor."></canvas>
+<div id="hs"></div>
+<div class="copy">
+<h1>Que tu cliente <span class="hl">recorra la propiedad</span> antes de visitarla</h1>
+<p>Grabamos tu departamento o casa con cámara 360 y lo publicamos en una página propia, lista para compartir por WhatsApp.</p>
+<div class="cta"><button class="btn pri" id="ex">Probar el tour de ejemplo</button><a class="btn" href="#como">Cómo funciona</a></div>
+</div>
+<aside class="card" aria-label="Datos de la propiedad de ejemplo">
+<small>Propiedad de ejemplo</small>
+<h2>Departamento en Miraflores</h2>
+<div class="pr">US$ 185,000</div>
+<ul><li>92 m²</li><li>3 dorm.</li><li>2 baños</li></ul>
+<div class="now"><span class="dot"></span><span>Estás en <b id="nowN">Sala</b></span></div>
+</aside>
+<div class="chips" id="chips" role="group" aria-label="Ambientes"><button class="out" id="out">Salir del modo recorrido</button></div>
+</header>
+
+<main>
+<section class="guide" id="como">
+<h2>De la cámara a tu cliente en tres pasos</h2>
+<div class="steps">
+<div><h3>1. Grabamos</h3><p>Vamos a la propiedad con cámara 360 y capturamos cada ambiente.</p></div>
+<div><h3>2. Armamos el tour</h3><p>Conectamos los ambientes, ponemos precio, datos y tu botón de WhatsApp.</p></div>
+<div><h3>3. Compartes el enlace</h3><p>Se abre en el celular, sin instalar nada. Tu cliente recorre y te escribe.</p></div>
+</div>
+</section>
+<section class="plans" id="planes"><div class="in">
+<h2>Planes mensuales</h2>
+<p class="sub">Alojamiento, mantenimiento y soporte incluidos. Precios de lanzamiento en soles, sujetos a cambio.</p>
+<div class="pg rv">
+<div class="pl"><h3>Inicio</h3><div class="pr">S/ 49<small> /mes</small></div><ul><li>1 tour activo</li><li>Hasta 6 ambientes</li><li>Tarjeta de precio y datos</li><li>Botón de WhatsApp</li><li>Enlace y código QR</li></ul><a class="btn" target="_blank" rel="noopener" href="https://wa.me/51999999999?text=%C2%A1Hola!%20%F0%9F%91%8B%20Quiero%20contratar%20el%20plan%20Inicio%20de%20Visita360%20%F0%9F%8F%A0">Contratar Inicio</a></div>
+<div class="pl top"><span class="bd">Más elegido</span><h3>Profesional</h3><div class="pr">S/ 99<small> /mes</small></div><ul><li>Hasta 5 tours activos</li><li>Ambientes ilimitados</li><li>Tu logo y marca</li><li>Plano interactivo</li><li>Cambios de precio y datos</li></ul><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/51999999999?text=%C2%A1Hola!%20%F0%9F%91%8B%20Quiero%20contratar%20el%20plan%20Profesional%20de%20Visita360%20%F0%9F%8F%A0">Contratar Profesional</a></div>
+<div class="pl"><h3>Agencia</h3><div class="pr">S/ 199<small> /mes</small></div><ul><li>Hasta 15 tours activos</li><li>Catálogo de propiedades</li><li>Dominio propio</li><li>Asistente de WhatsApp con IA (opcional)</li><li>Soporte prioritario</li></ul><a class="btn" target="_blank" rel="noopener" href="https://wa.me/51999999999?text=%C2%A1Hola!%20%F0%9F%91%8B%20Quiero%20contratar%20el%20plan%20Agencia%20de%20Visita360%20%F0%9F%8F%A0">Contratar Agencia</a></div>
+</div>
+<p class="sub" style="margin:30px 0 0">¿Aún no tienes fotos 360? Nuestro servicio de captura parte desde <strong>S/ 150 por propiedad</strong>.</p>
+<div class="pay"><span>Pagas con</span><b class="v">VISA</b><b class="y">yape</b><b class="p">plin</b><span>Mes a mes, sin permanencia.</span></div>
+</div></section>
+<section class="end"><h2>¿Tienes una propiedad para mostrar?</h2>
+<a class="wa" href="https://wa.me/51999999999?text=%C2%A1Hola!%20%F0%9F%91%8B%20Quiero%20un%20tour%20360%20para%20mi%20propiedad%20%F0%9F%8F%A0" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)},rad=Math.PI/180,
+rooms=[{n:'Sala',img:'sala.jpg',lo:70,la:-3},{n:'Cocina',img:'cocina.jpg',lo:190,la:-3},{n:'Panorama',img:'panorama.jpg',lo:310,la:-3}],
+cur=0,lon=0,lat=0,tLon=null,fov=75,idle=0,drag=0,
+reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function dirOf(lo,la){return new THREE.Vector3(Math.cos(la*rad)*Math.cos(lo*rad),Math.sin(la*rad),Math.cos(la*rad)*Math.sin(lo*rad))}
+/* panorama generado por código */
+function pano(){var c=document.createElement('canvas');c.width=2048;c.height=1024;var g=c.getContext('2d'),k;
+ k=g.createLinearGradient(0,0,0,1024);k.addColorStop(0,'#071428');k.addColorStop(.5,'#1d4f6b');k.addColorStop(.5,'#0b1824');k.addColorStop(1,'#050a12');g.fillStyle=k;g.fillRect(0,0,2048,1024);
+ for(var i=0;i<8;i++){var x=i*256+36;k=g.createLinearGradient(0,150,0,512);k.addColorStop(0,'rgba(127,233,255,.7)');k.addColorStop(1,'rgba(29,111,149,.25)');
+  g.fillStyle=k;g.fillRect(x,150,184,362);g.strokeStyle='rgba(180,245,255,.7)';g.lineWidth=3;g.strokeRect(x,150,184,362);g.lineWidth=1.5;
+  g.beginPath();g.moveTo(x+92,150);g.lineTo(x+92,512);g.moveTo(x,330);g.lineTo(x+184,330);g.stroke();
+  g.save();g.globalAlpha=.16;g.translate(0,1024);g.scale(1,-1);g.fillStyle='#7fe9ff';g.fillRect(x,512,184,362);g.restore();
+  g.fillStyle='rgba(255,179,71,.85)';g.fillRect(x+60,40,64,6)}
+ g.strokeStyle='rgba(77,225,255,.9)';g.lineWidth=4;g.beginPath();g.moveTo(0,512);g.lineTo(2048,512);g.stroke();
+ g.lineWidth=1.5;for(var j=1;j<9;j++){var y=512+j*j*7;g.strokeStyle='rgba(77,225,255,'+(0.3-j*.025)+')';g.beginPath();g.moveTo(0,y);g.lineTo(2048,y);g.stroke()}
+ return c}
+var cv=$('#gl'),hero=$('#top'),R=new THREE.WebGLRenderer({canvas:cv,antialias:true}),S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(75,1,.1,1100),
+geo=new THREE.SphereGeometry(500,64,40),t=new THREE.CanvasTexture(pano());geo.scale(-1,1,1);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;
+R.outputEncoding=THREE.sRGBEncoding;R.setPixelRatio(Math.min(devicePixelRatio,2));var mat=new THREE.MeshBasicMaterial({map:t});S.add(new THREE.Mesh(geo,mat));
+/* TU FOTO 360: sube un JPG equirectangular (2:1) junto a esta página con el nombre de FOTO. Si no existe, se usa el panorama de ejemplo. */
+/* Cada ambiente usa su propia foto (ver 'rooms'). Si un archivo no existe, queda el panorama de ejemplo. */
+function resize(){var w=hero.clientWidth,h=hero.clientHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(hero);
+/* ambientes: etiquetas sobre el panorama y botones */
+var hsEl=$('#hs'),chips=$('#chips'),btns=[];
+rooms.forEach(function(r,i){r.d=dirOf(r.lo,r.la);
+ var b=document.createElement('button');b.className='hs';b.setAttribute('aria-label','Ir a '+r.n);b.innerHTML='<i></i><span></span>';b.lastChild.textContent=r.n;b.onclick=function(){pick(i)};hsEl.appendChild(b);btns.push(b);
+ var c=document.createElement('button');c.textContent=r.n;c.onclick=function(){pick(i)};chips.insertBefore(c,$('#out'));r.chip=c});
+function pick(i){cur=i;var r=rooms[i];idle=0;tLon=null;lon=0;lat=0;$('#nowN').textContent=r.n;rooms.forEach(function(q,j){q.chip.setAttribute('aria-pressed',j===i)});
+ if(r.ok){mat.map=r.tx;mat.needsUpdate=true}
+ else if(!r.tx){r.tx=new THREE.TextureLoader().load(r.img,function(x){x.encoding=THREE.sRGBEncoding;x.minFilter=THREE.LinearFilter;x.generateMipmaps=false;x.anisotropy=4;r.ok=1;if(cur===i){mat.map=x;mat.needsUpdate=true}},undefined,function(){})}}
+pick(0);
+/* modo recorrido */
+function mode(on){document.body.classList.toggle('explore',on);if(on)hero.scrollIntoView({behavior:reduce?'auto':'smooth'})}
+$('#ex').onclick=function(){mode(true)};$('#out').onclick=function(){mode(false)};$('#lnkEx').onclick=function(){mode(true)};
+/* arrastre */
+var px=0,py=0;
+cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);drag=1;px=e.clientX;py=e.clientY;tLon=null;idle=0});
+cv.addEventListener('pointermove',function(e){if(!drag)return;var k=.12*fov/75;lon-=(e.clientX-px)*k;if(e.pointerType==='mouse')lat=Math.max(-60,Math.min(60,lat+(e.clientY-py)*k));px=e.clientX;py=e.clientY;idle=0});
+function up(){drag=0}cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',function(e){if(!document.body.classList.contains('explore'))return;e.preventDefault();fov=Math.max(45,Math.min(90,fov+e.deltaY*.04))},{passive:false});
+var tv=new THREE.Vector3(),cd=new THREE.Vector3(),vis=true;
+new IntersectionObserver(function(en){vis=en[0].isIntersecting}).observe(hero);
+function loop(){requestAnimationFrame(loop);if(!vis)return;
+ if(tLon!==null){var d=((tLon-lon+540)%360)-180;lon+=d*.08;lat+=(0-lat)*.08;if(Math.abs(d)<.3)tLon=null}
+ else if(!drag&&!reduce&&++idle>180)lon+=.07;
+ cam.fov=fov;cam.updateProjectionMatrix();cam.lookAt(dirOf(lon,lat));cam.updateMatrixWorld();cam.getWorldDirection(cd);R.render(S,cam);
+ var w=hero.clientWidth,h=hero.clientHeight;
+ rooms.forEach(function(r,i){var b=btns[i];tv.copy(r.d).project(cam);b.style.display=(i!==cur&&r.d.dot(cd)>.1)?'flex':'none';b.style.transform='translate('+((tv.x*.5+.5)*w-17)+'px,'+((-tv.y*.5+.5)*h-17)+'px)'})}
+resize();loop()})();
+(function(){var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}})},{threshold:.15});document.querySelectorAll('.rv').forEach(function(x){io.observe(x)})})();
+</script>
+</body>
+</html>
